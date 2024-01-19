@@ -1,12 +1,4 @@
-#include <stdio.h>
-#include <fstream>
-#include <iostream>
-#include <cassert>
-#include "glm/glm.hpp"
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #define GL_SILENCE_DEPRECATION
-using namespace std;
 
 // Without this gl.h gets included instead of gl3.h
 #define GLFW_INCLUDE_NONE
@@ -15,58 +7,32 @@ using namespace std;
 // For includes related to OpenGL, make sure their are included after glfw3.h
 #include <OpenGL/gl3.h>
 
-void errorCallback(int error, const char* description)
-{
-    fputs(description, stderr);
-}
+// Utils
+#include <stdio.h>
+#include <fstream>
+#include <iostream>
+#include <cassert>
+
+// Glm maths library
+#include "glm/glm.hpp"
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+// Local includes
+#include "keyboard_input.h"
+#include "error_callback.h"
+
+using namespace std;
 
 // Camera position
 glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-
-float cameraSpeed = 0.05f; // Adjust as needed
 float cameraYaw = -90.0f; // Initial yaw angle
 
+// Timing
 float deltaTime = 0.0f; // Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
-
-bool keys[1024]; // Array to store key states
-
-void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (action == GLFW_PRESS)
-        keys[key] = true;
-    else if (action == GLFW_RELEASE)
-        keys[key] = false;
-}
-
-void processInput(GLFWwindow *window) {
-    float cameraSpeed = 2.5f * deltaTime; // Adjust speed as needed
-    float rotationSpeed = 50.0f * deltaTime; // Adjust rotation speed as needed
-
-    if (keys[GLFW_KEY_UP])
-        cameraPos += cameraSpeed * cameraFront;
-    if (keys[GLFW_KEY_DOWN])
-        cameraPos -= cameraSpeed * cameraFront;
-    if (keys[GLFW_KEY_LEFT])
-        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-    if (keys[GLFW_KEY_RIGHT])
-        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-
-    // Vertical movement
-    if (keys[GLFW_KEY_W])
-        cameraPos += cameraSpeed * cameraUp;
-    if (keys[GLFW_KEY_S])
-        cameraPos -= cameraSpeed * cameraUp;
-
-    // Horizontal rotation
-    if (keys[GLFW_KEY_D])
-        cameraYaw += rotationSpeed;
-    if (keys[GLFW_KEY_A])
-        cameraYaw -= rotationSpeed;
-}
-
-
 
 void frameBufferResizeCallback(GLFWwindow* window, int width, int height){
     glViewport(0, 0, width, height);
@@ -136,37 +102,37 @@ int main(void)
         return -1;
     }
 
-    float axisVertices[] = {
-        // X Axis (Red)
-        0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-        10.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-        // Y Axis (Green)
-        0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-        0.0f, 10.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-        // Z Axis (Blue)
-        0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-        0.0f, 0.0f, 10.0f, 0.0f, 0.0f, 1.0f
+    // get window height and width
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+
+    // Define axis vertices
+    float axisLinesVertices[] = {
+        // X Axis           // (Red)
+        0.0f, 0.0f, 0.0f,   1.0f, 0.0f, 0.0f,
+        10.0f, 0.0f, 0.0f,  1.0f, 0.0f, 0.0f,
+        // Y Axis           // (Green)
+        0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f,
+        0.0f, 10.0f, 0.0f,  0.0f, 1.0f, 0.0f,
+        // Z Axis           // (Blue)
+        0.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f,
+        0.0f, 0.0f, 10.0f,  0.0f, 0.0f, 1.0f
     };
 
+    // Vertex array object for axis lines
     unsigned int VAOLine;
     glGenVertexArrays(1, &VAOLine);
     glBindVertexArray(VAOLine);
+
     unsigned int VBOLine;
     glGenBuffers(1, &VBOLine);
     glBindBuffer(GL_ARRAY_BUFFER, VBOLine);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(axisVertices), axisVertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(axisLinesVertices), axisLinesVertices, GL_STATIC_DRAW);
+    
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(2);
-
-
-    /* Vertex array object*/
-    unsigned int VAO;
-    // gen 1 vertex array object
-    glGenVertexArrays(1, &VAO); 
-    // bind it to current context
-    glBindVertexArray(VAO);
 
     // Vertex data and buffer
    float vertices[] = {
@@ -220,16 +186,13 @@ int main(void)
         -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f,   0.0f, 1.0f, 1.0f
     };
 
-
+    unsigned int VAO;
+    glGenVertexArrays(1, &VAO); 
+    glBindVertexArray(VAO);
     unsigned int VBO;
-    // gen 1 buffer
     glGenBuffers(1, &VBO);
-    // bind buffer to current context
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    // send data to buffer
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    
     glEnableVertexAttribArray(0); // setting up first vertex attribute (0)
     glVertexAttribPointer(
         0, // which attribute to configure (0)
@@ -239,26 +202,23 @@ int main(void)
         sizeof(float) * 9, // how many floats in each set of data
         0 // where does the data start in the buffer?
     );
-    
     glEnableVertexAttribArray(1); // setting up second vertex attribute (1)
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 9, (void*)(sizeof(float) * 3));
-
     glEnableVertexAttribArray(2); // setting up second vertex attribute (1)
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 9, (void*)(sizeof(float) * 6));
 
+
+    // SHADER PROGRAM
     // Vertex shader
     unsigned int vertexShader;
     vertexShader = glCreateShader(GL_VERTEX_SHADER); // create shader
-
     // read from file
     const char* adapter[1];
-    string temp = readShaderCode("VertexShaderCode.glsl");
+    string temp = readShaderCode("shaders/VertexShaderCode.glsl");
     adapter[0] = temp.c_str();
-
     // set the source
     glShaderSource(vertexShader, 1, adapter, 0);
     glCompileShader(vertexShader);
-
     // logging
     int  success;
     char infoLog[512];
@@ -268,19 +228,15 @@ int main(void)
         glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
         fputs(infoLog, stderr);
     }
-
     // Fragment shader
     unsigned int fragmentShader;
     fragmentShader = glCreateShader(GL_FRAGMENT_SHADER); // create shader
-
     // read from file
-    temp = readShaderCode("FragmentShaderCode.glsl");
+    temp = readShaderCode("shaders/FragmentShaderCode.glsl");
     adapter[0] = temp.c_str();
-
     // set the source
     glShaderSource(fragmentShader, 1, adapter, 0);
     glCompileShader(fragmentShader);
-
     // logging
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
     if(!success)
@@ -288,20 +244,14 @@ int main(void)
         glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
         fputs(infoLog, stderr);
     }
-
-    // Shader program
     unsigned int shaderProgram;
     shaderProgram = glCreateProgram();
-
     // attach the shaders
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
-
     glLinkProgram(shaderProgram);
-
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
-
     // logging
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
     if(!success) {
@@ -310,94 +260,88 @@ int main(void)
     }
     glUseProgram(shaderProgram);
 
-    int width, height;
-    glfwGetWindowSize(window, &width, &height);
-    // Create transformations
+
+    // CAMERA TRANSFORMATIONS
     glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(30.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
-
-    // Pass them to the shaders
     unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
     unsigned int viewLoc = glGetUniformLocation(shaderProgram, "view");
     unsigned int projLoc = glGetUniformLocation(shaderProgram, "projection");
-
-    // Set matrices
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
     
-
-    // After creating the shader program and before the render loop
+    // LIGHTING UNIFORMS
     glm::vec3 lightPos = glm::vec3(10.0f, 0.0f, 0.0f); // Define light position
     glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f); // White light
-
     unsigned int lightPosLoc = glGetUniformLocation(shaderProgram, "lightPos");
     unsigned int lightColorLoc = glGetUniformLocation(shaderProgram, "lightColor");
     unsigned int viewPosLoc = glGetUniformLocation(shaderProgram, "viewPos");
 
-    glEnable(GL_DEPTH_TEST);
-
-
-
+    glEnable(GL_DEPTH_TEST); // Enable depth testing
     // OpenGL initializations end here
 
     // Loop until the user closes the window
     while (!glfwWindowShouldClose(window))
     {
+        // Calculate delta time
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+        // setup keyboard input
         processInput(window);
         // Resize the viewport
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
         glViewport(0, 0, width, height);
-        // OpenGL Rendering related code
+        // Clear the color buffer && depth buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-         // Update cameraFront from cameraYaw
+
+        // UPDATE LIGHTING
+        glUniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
+        glUniform3f(lightColorLoc, lightColor.x, lightColor.y, lightColor.z);
+        glUniform3f(viewPosLoc, cameraPos.x, cameraPos.y, cameraPos.z);
+
+        // UPDATE CAMERA
+        // Update cameraFront from cameraYaw
         glm::vec3 front;
         front.x = cos(glm::radians(cameraYaw));
         front.y = 0; // Keep the camera horizontal
         front.z = sin(glm::radians(cameraYaw));
         cameraFront = glm::normalize(front);
+        // Update camera view location
+        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 
-        // In the render loop, update uniforms
-        glUniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
-        glUniform3f(lightColorLoc, lightColor.x, lightColor.y, lightColor.z);
-        glUniform3f(viewPosLoc, cameraPos.x, cameraPos.y, cameraPos.z);
-
+        // DRAW THE CUBE
         // Calculate the cube's rotation
         float timeValue = glfwGetTime();
         float angle = timeValue * glm::radians(50.0f);
         glm::mat4 model = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.5f, 1.0f, 0.0f));
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-        // Update view matrix
-        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
         // Use lighting for rendering cube
         GLint useLightingLocation = glGetUniformLocation(shaderProgram, "useLighting");
-        glUniform1i(useLightingLocation, GL_TRUE); // Disable lighting for line drawing
-        // Draw the cube
+        glUniform1i(useLightingLocation, GL_TRUE); 
+        // bind the vertex array
+        glBindVertexArray(VAO);
         int numCubeVertices = sizeof(vertices) / (sizeof(float) * 6); // Update with your cube's vertices size
+        // Draw the cube
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
-        // Dont use lighting for lines
-        useLightingLocation = glGetUniformLocation(shaderProgram, "useLighting");
-        glUniform1i(useLightingLocation, GL_FALSE); // Disable lighting for line drawing
-        glBindVertexArray(VAOLine);
+        // DRAW THE AXES LINES
+        // Dont use lighting for axes lines
+        useLightingLocation = glGetUniformLocation(shaderProgram, "useLighting"); 
+        glUniform1i(useLightingLocation, GL_FALSE);
+        // bind the vertex array object
+        glBindVertexArray(VAOLine); 
         glm::mat4 identityMatrix = glm::mat4(1.0f); // Identity matrix for axes
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(identityMatrix));
+        // Draw the axes lines
         glDrawArrays(GL_LINES, 0, 6); // 6 vertices for the 3 lines
 
-        // useLightingLocation = glGetUniformLocation(shaderProgram, "useLighting");
-        // glUniform1i(useLightingLocation, GL_FALSE); // Disable lighting for line drawing
 
-        // use shader program
-        glUseProgram(shaderProgram);
-        // bind the buffer
-        glBindVertexArray(VAO);
         // Swap front and back buffers
         glfwSwapBuffers(window);
         // Poll for and process events
