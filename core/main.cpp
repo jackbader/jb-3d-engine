@@ -25,6 +25,11 @@
 #include "keyboard_input.h"
 #include "error_callback.h"
 
+// Include the Assimp library
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 using namespace std;
 
 // Camera position
@@ -105,18 +110,24 @@ int main(void)
         return -1;
     }
 
+    // MODEL LOADING
+    // Initialize the model loader (Assimp)
+    // Assimp::Importer importer;
+    // const aiScene* scene = importer.ReadFile("models/Dragon_head.obj",
+    //                                          aiProcess_Triangulate |
+    //                                          aiProcess_FlipUVs |
+    //                                          aiProcess_GenNormals);
+
+    // TEXTURE LOADING
     unsigned int texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-
     // set the texture wrapping parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
     // set texture filtering parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
     // load image, create texture and generate mipmaps
     int imgWidth, imgHeight, nrChannels;
     unsigned char *data = stbi_load("./textures/cat.jpg", &imgWidth, &imgHeight, &nrChannels, 0);
